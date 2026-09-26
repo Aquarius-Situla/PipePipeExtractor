@@ -21,6 +21,7 @@ import org.schabi.newpipe.extractor.localization.Localization;
 import org.schabi.newpipe.extractor.playlist.PlaylistExtractor;
 import org.schabi.newpipe.extractor.search.SearchExtractor;
 import org.schabi.newpipe.extractor.services.niconico.extractors.NiconicoChannelTabExtractor;
+import org.schabi.newpipe.extractor.services.niconico.linkHandler.NiconicoChannelTabLinkHandlerFactory;
 import org.schabi.newpipe.extractor.services.niconico.extractors.NiconicoCommentsExtractor;
 import org.schabi.newpipe.extractor.services.niconico.extractors.NiconicoBulletCommentsExtractor;
 import org.schabi.newpipe.extractor.services.niconico.extractors.NiconicoCommentsCache;
@@ -206,7 +207,7 @@ public class NiconicoService extends StreamingService {
 
     @Override
     public ListLinkHandlerFactory getChannelTabLHFactory() {
-        return null;
+        return new NiconicoChannelTabLinkHandlerFactory();
     }
 
     @Override

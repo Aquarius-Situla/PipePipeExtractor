@@ -15,6 +15,7 @@ import org.schabi.newpipe.extractor.services.bilibili.extractors.BilibiliChannel
 import org.schabi.newpipe.extractor.services.niconico.NiconicoService;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 
@@ -36,7 +37,20 @@ public class NiconicoChannelTabExtractor extends ChannelTabExtractor {
             extractor.onFetchPage(getDownloader());
             return (InfoItemsPage<InfoItem>) (InfoItemsPage<?>) extractor.getInitialPage();
         }
-        return getPage(new Page(getLinkHandler().getUrl()));
+        return getPage(new Page(resolveInitialTabUrl()));
+    }
+
+    private String resolveInitialTabUrl() throws IOException, ExtractionException {
+        final NiconicoUserExtractor extractor = new NiconicoUserExtractor(getService(), getLinkHandler());
+        extractor.onFetchPage(getDownloader());
+        final List<ListLinkHandler> tabs = extractor.getTabs();
+        for (final ListLinkHandler tab : tabs) {
+            if (!tab.getContentFilters().isEmpty()
+                    && getTab().equals(tab.getContentFilters().get(0).getName())) {
+                return tab.getUrl();
+            }
+        }
+        throw new ExtractionException("Unsupported Niconico channel tab: " + getTab());
     }
 
     @Override
