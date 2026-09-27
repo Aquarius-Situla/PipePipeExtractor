@@ -61,6 +61,7 @@ public class NiconicoStreamExtractor extends StreamExtractor {
     private NiconicoWatchDataCache.WatchDataType type;
     private final NiconicoWatchDataCache niconicoWatchDataCache;
     private Document page = null;
+    private String liveUrl;
     private String liveMessageServer;
     private JsonObject liveData;
     private Document liveResponse;
@@ -249,7 +250,7 @@ public class NiconicoStreamExtractor extends StreamExtractor {
         webSocketClient.connect();
         long startTime = System.nanoTime();
         do {
-            String liveUrl = nicoWebSocketClient.getUrl();
+            liveUrl = nicoWebSocketClient.getUrl();
             liveMessageServer = nicoWebSocketClient.getServerUrl();
             if (liveUrl != null && liveMessageServer != null) {
                 webSocketClient.close();
@@ -277,7 +278,7 @@ public class NiconicoStreamExtractor extends StreamExtractor {
     public List<VideoStream> getVideoStreams() throws IOException, ExtractionException {
         if (getStreamType() == StreamType.LIVE_STREAM) {
             final List<VideoStream> videoStreams = new ArrayList<>();
-            videoStreams.add(new VideoStream.Builder().setContent(getUrl(), true)
+            videoStreams.add(new VideoStream.Builder().setContent(liveUrl, true)
                     .setId("Niconico-" + getId() + "-live").setIsVideoOnly(false)
                     .setResolution("720p").setDeliveryMethod(DeliveryMethod.HLS).build()); // not really 720p, we just fetch the best
             return videoStreams;
@@ -520,7 +521,7 @@ public class NiconicoStreamExtractor extends StreamExtractor {
     @Override
     public String getHlsUrl() throws ParsingException {
         if (getStreamType() == StreamType.LIVE_STREAM) {
-            return getUrl();
+            return liveUrl;
         }
         return null;
     }
