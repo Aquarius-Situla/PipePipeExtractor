@@ -434,8 +434,9 @@ public class BillibiliStreamExtractor extends StreamExtractor {
         watchDataCache.init(getUrl());
         // case: Live
         if (getStreamType() == StreamType.LIVE_STREAM) {
+            final String roomId = resolveLiveRoomId(downloader);
             final String roomInfoUrl = "https://api.live.bilibili.com/xlive/web-room/v1/index/getRoomBaseInfo"
-                    + "?room_ids=" + getId() + "&req_biz=web_room_componet";
+                    + "?room_ids=" + roomId + "&req_biz=web_room_componet";
             String response = downloader.get(roomInfoUrl).responseBody();
             try {
                 JsonObject responseJson = JsonParser.object().from(response);
@@ -443,7 +444,15 @@ public class BillibiliStreamExtractor extends StreamExtractor {
                 final JsonObject rooms = responseData == null
                         ? null
                         : responseData.getObject("by_room_ids");
-                final JsonObject roomData = rooms == null ? null : rooms.getObject(getId());
+                JsonObject roomData = rooms == null ? null : rooms.getObject(roomId);
+                if (roomData == null && rooms != null && rooms.size() == 1) {
+                    for (final Object value : rooms.values()) {
+                        if (value instanceof JsonObject) {
+                            roomData = (JsonObject) value;
+                            break;
+                        }
+                    }
+                }
                 if (responseJson.getInt("code") != 0 || roomData == null || roomData.size() == 0) {
                     throw new ExtractionException("Can not get live room info. Error message: "
                             + responseJson.getString("message"));
@@ -489,7 +498,7 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             } catch (JsonParserException e) {
                 throw new ExtractionException("Could not parse Bilibili live room info", e);
             }
-            return;
+                return;
         }
 
         // case: non-live
@@ -664,6 +673,23 @@ public class BillibiliStreamExtractor extends StreamExtractor {
         } catch (JsonParserException e) {
             e.printStackTrace();
         }
+    }
+
+    private String resolveLiveRoomId(final Downloader downloader) throws ParsingException {
+        try {
+            final String response = downloader.get(
+                    "https://api.live.bilibili.com/room/v1/Room/room_init?id=" + getId()
+            ).responseBody();
+            final long roomId = JsonParser.object().from(response)
+                    .getObject("data")
+                    .getLong("room_id");
+            if (roomId > 0) {
+                return String.valueOf(roomId);
+            }
+        } catch (final Exception ignored) {
+            // Fall back to the id from the original URL when room_init is unavailable.
+        }
+        return getId();
     }
 
     @Nonnull
