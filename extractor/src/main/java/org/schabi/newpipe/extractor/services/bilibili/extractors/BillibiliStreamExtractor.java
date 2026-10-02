@@ -554,13 +554,7 @@ public class BillibiliStreamExtractor extends StreamExtractor {
                 throw new ContentNotAvailableException(
                         "Could not get Bilibili video metadata");
             }
-
-            String pageNumString = Utils.getQueryValue(Utils.stringToURL(getLinkHandler().getUrl()), "p");
-            int pageNum = 1;
-            if (pageNumString != null) {
-                pageNum = Integer.parseInt(pageNumString);
-            }
-            page = watch.getArray("pages").getObject(pageNum - 1);
+            page = BilibiliStreamPageParser.pageForUrl(watch, getLinkHandler().getUrl());
             cid = page.getLong("cid");
             watchDataCache.setCid(getId(), cid);
             watchDataCache.setBvid(getId(), bvid);
@@ -929,6 +923,11 @@ public class BillibiliStreamExtractor extends StreamExtractor {
             e.printStackTrace();
         }
         return collector;
+    }
+
+    @Override
+    public List<StreamCollectionInfo> getCollections() {
+        return BilibiliCollectionParser.parse(watch);
     }
 
     private void waitForCall(CancellableCall call) {
