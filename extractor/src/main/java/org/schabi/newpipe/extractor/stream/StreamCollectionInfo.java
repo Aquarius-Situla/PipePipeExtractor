@@ -58,13 +58,20 @@ public final class StreamCollectionInfo implements Serializable {
         private final String title;
         private final String url;
         private final long contentId;
+        private final String thumbnailUrl;
 
         public Episode(final String videoId, final String title, final String url,
                        final long contentId) {
+            this(videoId, title, url, contentId, "");
+        }
+
+        public Episode(final String videoId, final String title, final String url,
+                       final long contentId, final String thumbnailUrl) {
             this.videoId = videoId;
             this.title = title;
             this.url = url;
             this.contentId = contentId;
+            this.thumbnailUrl = thumbnailUrl == null ? "" : thumbnailUrl;
         }
 
         public String getVideoId() {
@@ -81,6 +88,10 @@ public final class StreamCollectionInfo implements Serializable {
 
         public long getContentId() {
             return contentId;
+        }
+
+        public String getThumbnailUrl() {
+            return thumbnailUrl;
         }
     }
 }

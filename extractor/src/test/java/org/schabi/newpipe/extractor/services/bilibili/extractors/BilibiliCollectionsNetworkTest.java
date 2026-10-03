@@ -36,6 +36,7 @@ class BilibiliCollectionsNetworkTest {
         assertEquals("BV1Tb421b7mi", firstEpisode.getVideoId());
         assertEquals("https://www.bilibili.com/video/BV1Tb421b7mi", firstEpisode.getUrl());
         assertEquals(1541093346, firstEpisode.getContentId());
+        assertTrue(firstEpisode.getThumbnailUrl().startsWith("https://"));
         assertTrue(collections.get(0).getSections().get(0).getEpisodes().size() > 1);
 
         final JsonObject uncollectedVideo = fetchVideo("BV1ex411J7GE");

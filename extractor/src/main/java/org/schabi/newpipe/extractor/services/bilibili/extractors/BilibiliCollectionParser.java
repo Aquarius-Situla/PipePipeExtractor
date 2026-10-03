@@ -74,11 +74,19 @@ final class BilibiliCollectionParser {
             if ((title == null || title.isEmpty()) && archive != null) {
                 title = archive.getString("title");
             }
+            String thumbnailUrl = episode.getString("pic");
+            if ((thumbnailUrl == null || thumbnailUrl.isEmpty()) && archive != null) {
+                thumbnailUrl = archive.getString("pic");
+            }
+            if (thumbnailUrl != null) {
+                thumbnailUrl = thumbnailUrl.replace("http:", "https:");
+            }
             if (resolvedVideoId == null || title == null || title.isEmpty()) {
                 continue;
             }
             final String url = "https://www.bilibili.com/video/" + resolvedVideoId;
-            episodes.add(new StreamCollectionInfo.Episode(resolvedVideoId, title, url, cid));
+            episodes.add(new StreamCollectionInfo.Episode(resolvedVideoId, title, url, cid,
+                    thumbnailUrl));
         }
         return episodes;
     }

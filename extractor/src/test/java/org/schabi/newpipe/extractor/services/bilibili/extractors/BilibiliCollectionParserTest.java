@@ -23,7 +23,8 @@ class BilibiliCollectionParserTest {
                       "id": 3341804,
                       "title": "正片",
                       "episodes": [
-                        {"aid": 1804383120, "cid": 1541093346, "title": "Episode one"},
+                        {"aid": 1804383120, "cid": 1541093346, "title": "Episode one",
+                         "arc": {"pic": "http://i0.hdslb.com/episode-one.jpg"}},
                         {"aid": 1004394994, "cid": 1542426326, "title": "Episode two"}
                       ]
                     }]
@@ -45,6 +46,8 @@ class BilibiliCollectionParserTest {
                 collection.getSections().get(0).getEpisodes().get(0).getUrl());
         assertEquals(1541093346,
                 collection.getSections().get(0).getEpisodes().get(0).getContentId());
+        assertEquals("https://i0.hdslb.com/episode-one.jpg",
+                collection.getSections().get(0).getEpisodes().get(0).getThumbnailUrl());
         assertEquals("Episode two", collection.getSections().get(0).getEpisodes().get(1).getTitle());
     }
 
@@ -63,5 +66,21 @@ class BilibiliCollectionParserTest {
 
         assertEquals("BV1explicit01", BilibiliCollectionParser.parse(watch).get(0)
                 .getSections().get(0).getEpisodes().get(0).getVideoId());
+    }
+
+    @Test
+    void prefersEpisodeThumbnailAndDefaultsToEmptyWhenAbsent() throws JsonParserException {
+        final JsonObject watch = JsonParser.object().from("""
+                {"ugc_season":{"id":1,"title":"Season","sections":[{"id":2,
+                  "title":"Main","episodes":[
+                    {"aid":1,"cid":3,"title":"With cover","pic":"http://i0.hdslb.com/cover.jpg"},
+                    {"aid":2,"cid":4,"title":"Without cover"}
+                  ]}]}}
+                """);
+
+        final List<StreamCollectionInfo.Episode> episodes = BilibiliCollectionParser.parse(watch)
+                .get(0).getSections().get(0).getEpisodes();
+        assertEquals("https://i0.hdslb.com/cover.jpg", episodes.get(0).getThumbnailUrl());
+        assertEquals("", episodes.get(1).getThumbnailUrl());
     }
 }
