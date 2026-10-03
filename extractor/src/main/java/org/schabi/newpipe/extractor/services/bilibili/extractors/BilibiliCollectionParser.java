@@ -18,15 +18,32 @@ final class BilibiliCollectionParser {
             return Collections.emptyList();
         }
 
-        final JsonObject season = watch.getObject("ugc_season");
-        if (season == null) {
-            return Collections.emptyList();
+        final List<StreamCollectionInfo> collections = new ArrayList<>();
+
+        final JsonArray pages = watch.getArray("pages");
+        if (pages != null && pages.size() > 1) {
+            final StreamCollectionInfo pageCollection = parsePages(watch, pages);
+            if (pageCollection != null) {
+                collections.add(pageCollection);
+            }
         }
 
+        final JsonObject season = watch.getObject("ugc_season");
+        if (season != null) {
+            final StreamCollectionInfo seasonCollection = parseSeason(season);
+            if (seasonCollection != null) {
+                collections.add(seasonCollection);
+            }
+        }
+
+        return collections;
+    }
+
+    private static StreamCollectionInfo parseSeason(final JsonObject season) {
         final String collectionId = numericId(season, "id");
         final String title = season.getString("title");
         if (collectionId == null || title == null || title.isEmpty()) {
-            return Collections.emptyList();
+            return null;
         }
 
         final List<StreamCollectionInfo.Section> sections = new ArrayList<>();
@@ -46,8 +63,68 @@ final class BilibiliCollectionParser {
                         parseEpisodes(section.getArray("episodes"))));
             }
         }
-        return Collections.singletonList(
-                new StreamCollectionInfo(collectionId, title, sections));
+        return new StreamCollectionInfo(collectionId, title, sections);
+    }
+
+    private static StreamCollectionInfo parsePages(final JsonObject watch, final JsonArray pages) {
+        final String rawBvid = watch.getString("bvid");
+        final long aid = watch.getLong("aid", -1);
+        final String bvid = (rawBvid != null && !rawBvid.isEmpty())
+                ? rawBvid
+                : (aid > 0 ? utils.av2bv(aid) : null);
+        if (bvid == null || bvid.isEmpty()) {
+            return null;
+        }
+
+        final String watchTitle = watch.getString("title");
+        final String collectionTitle = (watchTitle != null && !watchTitle.isEmpty())
+                ? watchTitle
+                : "分P列表";
+        String mainPic = watch.getString("pic");
+        if (mainPic != null) {
+            mainPic = mainPic.replace("http:", "https:");
+        }
+
+        final List<StreamCollectionInfo.Episode> episodes = new ArrayList<>();
+        for (int i = 0; i < pages.size(); i++) {
+            final JsonObject page = pages.getObject(i);
+            if (page == null) {
+                continue;
+            }
+            final int pageNumber = page.getInt("page", i + 1);
+            final long cid = page.getLong("cid", -1);
+            final String part = page.getString("part");
+            final String episodeTitle;
+            if (part == null || part.trim().isEmpty()) {
+                episodeTitle = "P" + pageNumber;
+            } else if (part.trim().matches("^[Pp]\\d+.*")) {
+                episodeTitle = part.trim();
+            } else {
+                episodeTitle = "P" + pageNumber + " " + part.trim();
+            }
+
+            String thumbnailUrl = page.getString("first_frame");
+            if (thumbnailUrl == null || thumbnailUrl.isEmpty()) {
+                thumbnailUrl = mainPic;
+            }
+            if (thumbnailUrl != null) {
+                thumbnailUrl = thumbnailUrl.replace("http:", "https:");
+            }
+
+            final String videoId = bvid + (pageNumber > 1 ? "?p=" + pageNumber : "");
+            final String url = "https://www.bilibili.com/video/" + videoId;
+            episodes.add(new StreamCollectionInfo.Episode(videoId, episodeTitle, url, cid,
+                    thumbnailUrl));
+        }
+
+        if (episodes.isEmpty()) {
+            return null;
+        }
+
+        final StreamCollectionInfo.Section section = new StreamCollectionInfo.Section(
+                "parts", "分P (" + episodes.size() + ")", episodes);
+        return new StreamCollectionInfo(bvid + "-parts", collectionTitle,
+                Collections.singletonList(section));
     }
 
     private static List<StreamCollectionInfo.Episode> parseEpisodes(final JsonArray episodeData) {
@@ -68,8 +145,8 @@ final class BilibiliCollectionParser {
             final String videoId = episode.getString("bvid",
                     archive == null ? null : archive.getString("bvid"));
             final String resolvedVideoId = videoId == null || videoId.isEmpty()
-                    ? (aid > 0 ? utils.av2bv(aid) : null)
-                    : videoId;
+                ? (aid > 0 ? utils.av2bv(aid) : null)
+                : videoId;
             String title = episode.getString("title");
             if ((title == null || title.isEmpty()) && archive != null) {
                 title = archive.getString("title");
