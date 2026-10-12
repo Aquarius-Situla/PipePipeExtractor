@@ -39,7 +39,8 @@ public final class YoutubeSabrSession {
                                @Nonnull YoutubeSabrClientProfile profile,
                                @Nonnull Localization localization,
                                @Nonnull ContentCountry contentCountry,
-                               @Nonnull SabrPoTokenProvider poTokenProvider)
+                               @Nullable SabrPoTokenProvider poTokenProvider,
+                               @Nullable String reloadPlaybackToken)
                 throws IOException, ExtractionException;
     }
 
@@ -176,7 +177,7 @@ public final class YoutubeSabrSession {
         this(info, audioFormat, videoFormat, poTokenProvider, segmentSpoolDirectory,
                 new SabrSessionPolicyHost(new BuiltinSabrSessionPolicy(),
                         new SabrSessionPolicyTranscript(512)),
-                YoutubeSabrProbe::fetchSabrInfoRequiringSessionPoToken);
+                YoutubeSabrProbe::reloadSabrInfo);
     }
 
     YoutubeSabrSession(@Nonnull final YoutubeSabrInfo info,
@@ -198,7 +199,7 @@ public final class YoutubeSabrSession {
                               @Nonnull final SabrSessionPolicy policy) {
         this(info, audioFormat, videoFormat, poTokenProvider, segmentSpoolDirectory,
                 new SabrSessionPolicyHost(policy, new SabrSessionPolicyTranscript(512)),
-                YoutubeSabrProbe::fetchSabrInfoRequiringSessionPoToken);
+                YoutubeSabrProbe::reloadSabrInfo);
     }
 
     public YoutubeSabrSession(@Nonnull final YoutubeSabrInfo info,
@@ -208,7 +209,7 @@ public final class YoutubeSabrSession {
                               @Nullable final File segmentSpoolDirectory,
                               @Nonnull final SabrSessionPolicyHost sessionPolicyHost) {
         this(info, audioFormat, videoFormat, poTokenProvider, segmentSpoolDirectory,
-                sessionPolicyHost, YoutubeSabrProbe::fetchSabrInfoRequiringSessionPoToken);
+                sessionPolicyHost, YoutubeSabrProbe::reloadSabrInfo);
     }
 
     private YoutubeSabrSession(@Nonnull final YoutubeSabrInfo info,
@@ -605,7 +606,8 @@ public final class YoutubeSabrSession {
      * @return true if a fresh info was applied and the caller should retry, false if the reload
      *     budget is spent or the re-probe came back unusable.
      */
-    private boolean maybeReload(@Nonnull final Localization localization)
+    private boolean maybeReload(@Nonnull final Localization localization,
+                                @Nullable final String reloadPlaybackToken)
             throws IOException, ExtractionException {
         if (reloads >= MAX_RELOADS_PER_SESSION) {
             return false;
@@ -614,8 +616,9 @@ public final class YoutubeSabrSession {
         final ContentCountry contentCountry = localization.getCountryCode().isEmpty()
                 ? ContentCountry.DEFAULT
                 : new ContentCountry(localization.getCountryCode());
-        final YoutubeSabrInfo fresh = YoutubeSabrProbe.fetchSabrInfo(
-                info.getVideoId(), info.getProfile(), localization, contentCountry);
+        final YoutubeSabrInfo fresh = playerInfoReloader.reload(
+                info.getVideoId(), info.getProfile(), localization, contentCountry,
+                null, reloadPlaybackToken);
         if (fresh.getServerAbrStreamingUrl() == null || fresh.getServerAbrStreamingUrl().isEmpty()) {
             return false;
         }
@@ -624,6 +627,7 @@ public final class YoutubeSabrSession {
         final boolean hadPoToken = streamState.getRawPoToken() != null;
         info = fresh;
         serverAbrStreamingUrl = fresh.getServerAbrStreamingUrl();
+        updateHostCandidates(serverAbrStreamingUrl);
         redirectCount = 0;
         if (visitorIdentityChanged) {
             streamState.setPoToken(null);
@@ -995,16 +999,20 @@ public final class YoutubeSabrSession {
                                 : "SABR error while fetching " + describeRequest(request)
                                 + ": " + errorDetails);
                     case TRY_RELOAD:
-                        if (maybeReload(localization)) {
+                        final SabrReloadPlayerResponse reloadResponse =
+                                decoded.getReloadPlayerResponse();
+                        final String reloadPlaybackToken = reloadResponse == null ? null
+                                : reloadResponse.getReloadPlaybackParamsToken();
+                        if (maybeReload(localization, reloadPlaybackToken)) {
                             completed = true;
                             return PolicyControlOutcome.RETRY;
                         }
-                        throw new SabrProtocolException(request == null
+                        throw new SabrReloadException(request == null
                                 ? "SABR requested player reload (reload budget spent): "
                                 + decoded.summarizeNoMediaResponse()
                                 : "SABR requested player reload while fetching "
                                 + describeRequest(request) + " (reload budget spent): "
-                                + decoded.summarizeNoMediaResponse());
+                                + decoded.summarizeNoMediaResponse(), reloadPlaybackToken);
                     case RESET_RECOVERY_BUDGETS:
                         break;
                     case SLEEP_BACKOFF:
@@ -1979,7 +1987,7 @@ public final class YoutubeSabrSession {
                 : new ContentCountry(localization.getCountryCode());
         final YoutubeSabrInfo fresh = playerInfoReloader.reload(
                 info.getVideoId(), info.getProfile(), localization, contentCountry,
-                rotationPoTokenProvider);
+                rotationPoTokenProvider, null);
         if (fresh.getServerAbrStreamingUrl() == null
                 || fresh.getServerAbrStreamingUrl().isEmpty()) {
             throw new SabrProtocolException(

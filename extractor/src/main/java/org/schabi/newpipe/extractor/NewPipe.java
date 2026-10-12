@@ -46,7 +46,7 @@ public final class NewPipe {
     private static Downloader downloader;
     private static Localization preferredLocalization;
     private static ContentCountry preferredContentCountry;
-    private static String youtubePlayerClient = "visionos";
+    private static String youtubePlayerClient = "mweb";
     @Nullable
     private static YoutubeSessionPoTokenProvider youtubeSessionPoTokenProvider;
     @Nullable
@@ -178,7 +178,7 @@ public final class NewPipe {
                 || "tv_downgraded".equals(youtubePlayerClient)) {
             NewPipe.youtubePlayerClient = youtubePlayerClient;
         } else {
-            NewPipe.youtubePlayerClient = "visionos";
+            NewPipe.youtubePlayerClient = "mweb";
         }
     }
 

@@ -118,7 +118,8 @@ class YoutubeSabrSessionStreamProtectionTest {
         final YoutubeSabrInfo freshInfo = sabrInfo(
                 "fresh-visitor", "https://example.com/fresh-sabr", true);
         final Fixture fixture = createFixture(downloader, tokenProvider,
-                (videoId, profile, localization, contentCountry, rotationProvider) -> {
+                (videoId, profile, localization, contentCountry, rotationProvider,
+                 reloadPlaybackToken) -> {
                     assertSame(tokenProvider, rotationProvider);
                     return freshInfo;
                 });
@@ -171,7 +172,7 @@ class YoutubeSabrSessionStreamProtectionTest {
                 "fresh-visitor", "https://example.com/fresh-sabr", true);
         final Fixture fixture = createFixture(downloader, tokenProvider,
                 (videoId, profile, localization, contentCountry,
-                 rotationProvider) -> freshInfo);
+                 rotationProvider, reloadPlaybackToken) -> freshInfo);
         fixture.session.getStreamState().setPoToken(new byte[]{1, 2, 3});
         fixture.session.getStreamState().ingestInitializationData(
                 fixture.videoFormat, new byte[]{0});
@@ -219,7 +220,7 @@ class YoutubeSabrSessionStreamProtectionTest {
                 "fresh-visitor", "https://example.com/fresh-sabr", false);
         final Fixture fixture = createFixture(downloader, tokenProvider,
                 (videoId, profile, localization, contentCountry,
-                 rotationProvider) -> unboundPlayerInfo);
+                 rotationProvider, reloadPlaybackToken) -> unboundPlayerInfo);
         fixture.session.getStreamState().setPoToken(new byte[]{1, 2, 3});
 
         final SabrProtocolException failure = assertThrows(SabrProtocolException.class,
@@ -258,7 +259,7 @@ class YoutubeSabrSessionStreamProtectionTest {
                 "visitor", "https://example.com/fresh-sabr", true);
         final Fixture fixture = createFixture(downloader, tokenProvider,
                 (videoId, profile, localization, contentCountry,
-                 rotationProvider) -> unchangedVisitorInfo);
+                 rotationProvider, reloadPlaybackToken) -> unchangedVisitorInfo);
         fixture.session.getStreamState().setPoToken(new byte[]{1, 2, 3});
 
         fixture.session.pumpOnceStreamingForDemand(LOCALIZATION,

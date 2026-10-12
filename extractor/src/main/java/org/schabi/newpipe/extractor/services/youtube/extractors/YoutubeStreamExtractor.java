@@ -1229,6 +1229,25 @@ public class YoutubeStreamExtractor extends StreamExtractor {
         }
     }
 
+    /**
+     * Re-runs the MWEB player request with the token of a server-requested SABR reload and builds
+     * a fresh {@link YoutubeSabrInfo} from the response. Used to hot-swap an expired SABR session
+     * (new streaming URL, ustreamer config and PO token) without restarting playback.
+     *
+     * @param videoId     the video to reload
+     * @param reloadToken the token carried by the reload response, or an empty string when the
+     *                    server did not provide one
+     */
+    @Nonnull
+    public static YoutubeSabrInfo fetchSabrInfoForReload(
+            @Nonnull final String videoId,
+            @Nonnull final String reloadToken) throws IOException, ExtractionException {
+        final Localization localization = NewPipe.getPreferredLocalization();
+        final ContentCountry contentCountry = NewPipe.getPreferredContentCountry();
+        return YoutubeSabrProbe.reloadSabrInfo(videoId, YoutubeSabrClientProfile.MWEB,
+                localization, contentCountry, null, reloadToken);
+    }
+
     @Nonnull
     static YoutubeSabrInfo buildSabrInfoFromPlayerResponse(
             @Nonnull final String videoId,
