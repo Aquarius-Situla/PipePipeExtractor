@@ -19,6 +19,7 @@ allprojects {
     group 'com.github.InfinityLoop1308.PipePipeExtractor'
 
     repositories {
+        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
         mavenCentral()
         maven { url "https://jitpack.io" }
     }
