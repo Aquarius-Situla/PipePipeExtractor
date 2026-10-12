@@ -1,5 +1,7 @@
 before_install:
   - sdk install java 25.0.4-tem
   - sdk use java 25.0.4-tem
+  - sdk install gradle 9.5.1
+  - sdk use gradle 9.5.1
 install:
-  - ./gradlew --no-daemon -Pgroup="$GROUP" -Pversion="$VERSION" publishToMavenLocal -x test
+  - gradle -Pgroup="$GROUP" -Pversion="$VERSION" publishToMavenLocal -x test
