@@ -1,2 +1,9 @@
+pluginManagement {
+    repositories {
+        maven { url = uri("https://repo1.maven.org/maven2") }
+        gradlePluginPortal()
+    }
+}
+
 include 'extractor', 'timeago-parser'
 rootProject.name = 'PipePipeExtractor'
