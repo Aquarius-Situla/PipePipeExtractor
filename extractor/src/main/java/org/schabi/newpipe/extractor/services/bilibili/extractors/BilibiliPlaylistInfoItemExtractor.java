@@ -5,9 +5,6 @@ import com.grack.nanojson.JsonObject;
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
 import org.schabi.newpipe.extractor.playlist.PlaylistInfoItemExtractor;
 
-import static org.schabi.newpipe.extractor.services.bilibili.BilibiliService.GET_SEASON_ARCHIVES_LIST_RAW_URL;
-import static org.schabi.newpipe.extractor.services.bilibili.BilibiliService.GET_SERIES_RAW_URL;
-
 public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtractor {
     private final JsonObject itemObject;
     private final String type;
@@ -16,11 +13,13 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
     private String thumbnail;
     private String uploader;
     private long streamCount;
-    public BilibiliPlaylistInfoItemExtractor(JsonObject itemObject, String type){
+
+    public BilibiliPlaylistInfoItemExtractor(JsonObject itemObject, String type) {
         this.itemObject = itemObject.getObject("meta");
         this.type = type;
     }
-    public BilibiliPlaylistInfoItemExtractor(String name, String url, String thumbnail, String uploader, long streamCount){
+
+    public BilibiliPlaylistInfoItemExtractor(String name, String url, String thumbnail, String uploader, long streamCount) {
         this.name = name;
         this.url = url;
         this.thumbnail = thumbnail;
@@ -29,12 +28,19 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
         this.itemObject = null;
         this.type = null;
     }
+
     @Override
     public String getName() throws ParsingException {
         if (type == null) {
             return name;
         }
-        return itemObject.getString("name");
+        if (itemObject.has("name") && !itemObject.getString("name").isEmpty()) {
+            return itemObject.getString("name");
+        }
+        if (itemObject.has("title") && !itemObject.getString("title").isEmpty()) {
+            return itemObject.getString("title");
+        }
+        return "";
     }
 
     @Override
@@ -42,13 +48,12 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
         if (type == null) {
             return url;
         }
-        if(type.equals("seasons_archives")){
-           return String.format(GET_SEASON_ARCHIVES_LIST_RAW_URL,
-                    itemObject.getLong("mid"), itemObject.getLong("season_id"), getName());
-        }
-        else if(type.equals("archives")){
-            return String.format(GET_SERIES_RAW_URL,
-                    itemObject.getLong("mid"), itemObject.getLong("series_id"), getName());
+        if ("seasons_archives".equals(type)) {
+            return String.format("https://www.bilibili.com/medialist/play/%d?business=space_collection&business_id=%d",
+                    itemObject.getLong("mid"), itemObject.getLong("season_id"));
+        } else if ("archives".equals(type)) {
+            return String.format("https://www.bilibili.com/medialist/play/%d?business=space_series&business_id=%d",
+                    itemObject.getLong("mid"), itemObject.getLong("series_id"));
         }
         return null;
     }
@@ -58,7 +63,8 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
         if (type == null) {
             return thumbnail;
         }
-        return itemObject.getString("cover").replace("http:", "https:");
+        String cover = itemObject.getString("cover");
+        return cover != null ? cover.replace("http:", "https:") : "";
     }
 
     @Override
