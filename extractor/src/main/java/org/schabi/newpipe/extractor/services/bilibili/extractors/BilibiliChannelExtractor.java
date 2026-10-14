@@ -121,9 +121,12 @@ public class BilibiliChannelExtractor extends ChannelExtractor {
         UserVideoImpl videoImpl = getVideoImpl();
         boolean hasVideos = videoImpl.getInitialPage(collector, this);
         Page nextPage = null;
-        if (hasVideos) nextPage = new Page(getNextPageFromCurrentUrl(
-                getUrl(), "pn", 1, true, "1", "?"), String.valueOf(videoImpl.lastVideo()), null, BilibiliService.getDefaultCookies(), null
-        );
+        if (hasVideos) {
+            final String sep = getUrl().contains("?") ? "&" : "?";
+            nextPage = new Page(getNextPageFromCurrentUrl(
+                    getUrl(), "pn", 1, true, "1", sep), String.valueOf(videoImpl.lastVideo()), null, BilibiliService.getDefaultCookies(), null
+            );
+        }
         if (ServiceList.BiliBili.getFilterTypes().contains("channels")) {
             collector.applyBlocking(ServiceList.BiliBili.getFilterConfig());
         }
