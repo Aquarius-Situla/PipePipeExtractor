@@ -85,4 +85,16 @@ class BilibiliPlaylistLinkHandlerFactoryTest {
         assertFalse(factory.onAcceptUrl("https://space.bilibili.com/11545648/dynamic"));
         assertThrows(ParsingException.class, () -> factory.getId("https://www.youtube.com/playlist?list=PL123"));
     }
+
+    @Test
+    void testGetUrl() throws ParsingException {
+        assertEquals("https://www.bilibili.com/medialist/play/11545648?business=space_collection&business_id=649231",
+                factory.getUrl("season:11545648:649231", null, null));
+        assertEquals("https://www.bilibili.com/medialist/play/11545648?business=space_collection&business_id=649231",
+                factory.getUrl("bilibili:season:11545648:649231", null, null));
+        assertEquals("https://www.bilibili.com/medialist/play/11545648?business=space_series&business_id=12345",
+                factory.getUrl("series:11545648:12345", null, null));
+        assertEquals("https://www.bilibili.com/medialist/play/11545648?business=space_series&business_id=12345",
+                factory.getUrl("bilibili:series:11545648:12345", null, null));
+    }
 }

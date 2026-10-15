@@ -85,4 +85,15 @@ class BilibiliChannelSortTest {
         String latestUrl = factory.getUrl("11545648", null, Collections.singletonList(latest));
         assertEquals("https://space.bilibili.com/11545648?order=pubdate", latestUrl);
     }
+
+    @Test
+    void testVariedChannelUrlFormats() throws ParsingException {
+        assertEquals("11545648", factory.getId("https://space.bilibili.com/11545648/video"));
+        assertEquals("11545648", factory.getId("https://space.bilibili.com/11545648/video?order=click"));
+        assertEquals("11545648", factory.getId("https://space.bilibili.com/11545648/channel/series"));
+        assertEquals("11545648", factory.getId("https://space.bilibili.com/11545648#fav"));
+        assertEquals("11545648", factory.getId("https://www.bilibili.com/space/11545648"));
+        assertEquals("11545648", factory.getId("https://api.bilibili.com/x/space/wbi/arc/search?mid=11545648&pn=1"));
+        assertEquals("11545648", factory.getId("11545648"));
+    }
 }

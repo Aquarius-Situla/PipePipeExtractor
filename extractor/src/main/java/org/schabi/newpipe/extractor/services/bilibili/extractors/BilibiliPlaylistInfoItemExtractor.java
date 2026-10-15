@@ -15,7 +15,11 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
     private long streamCount;
 
     public BilibiliPlaylistInfoItemExtractor(JsonObject itemObject, String type) {
-        this.itemObject = itemObject.getObject("meta");
+        if (itemObject != null && itemObject.has("meta") && itemObject.getObject("meta") != null) {
+            this.itemObject = itemObject.getObject("meta");
+        } else {
+            this.itemObject = itemObject;
+        }
         this.type = type;
     }
 
@@ -34,10 +38,13 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
         if (type == null) {
             return name;
         }
-        if (itemObject.has("name") && !itemObject.getString("name").isEmpty()) {
+        if (itemObject == null) {
+            return "";
+        }
+        if (itemObject.has("name") && itemObject.getString("name") != null && !itemObject.getString("name").isEmpty()) {
             return itemObject.getString("name");
         }
-        if (itemObject.has("title") && !itemObject.getString("title").isEmpty()) {
+        if (itemObject.has("title") && itemObject.getString("title") != null && !itemObject.getString("title").isEmpty()) {
             return itemObject.getString("title");
         }
         return "";
@@ -48,10 +55,13 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
         if (type == null) {
             return url;
         }
+        if (itemObject == null) {
+            return null;
+        }
         if ("seasons_archives".equals(type)) {
             return String.format("https://www.bilibili.com/medialist/play/%d?business=space_collection&business_id=%d",
                     itemObject.getLong("mid"), itemObject.getLong("season_id"));
-        } else if ("archives".equals(type)) {
+        } else if ("archives".equals(type) || "series".equals(type)) {
             return String.format("https://www.bilibili.com/medialist/play/%d?business=space_series&business_id=%d",
                     itemObject.getLong("mid"), itemObject.getLong("series_id"));
         }
@@ -62,6 +72,9 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
     public String getThumbnailUrl() throws ParsingException {
         if (type == null) {
             return thumbnail;
+        }
+        if (itemObject == null) {
+            return "";
         }
         String cover = itemObject.getString("cover");
         return cover != null ? cover.replace("http:", "https:") : "";
@@ -80,6 +93,6 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
         if (type == null) {
             return streamCount;
         }
-        return itemObject.getLong("total");
+        return itemObject != null ? itemObject.getLong("total") : 0;
     }
 }

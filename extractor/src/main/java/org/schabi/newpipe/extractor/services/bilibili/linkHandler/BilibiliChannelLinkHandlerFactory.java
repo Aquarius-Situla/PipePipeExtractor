@@ -2,6 +2,7 @@ package org.schabi.newpipe.extractor.services.bilibili.linkHandler;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.schabi.newpipe.extractor.exceptions.ParsingException;
@@ -51,19 +52,19 @@ public class BilibiliChannelLinkHandlerFactory extends ListLinkHandlerFactory {
         if (url == null || url.trim().isEmpty()) {
             throw new ParsingException("Not a bilibili channel link: empty URL.");
         }
-        if (url.contains("mid=")) {
-            return url.split("mid=")[1].split("&")[0];
+        String trimmed = url.trim();
+        Matcher midParamMatcher = Pattern.compile("[?&]mid=(\\d+)").matcher(trimmed);
+        if (midParamMatcher.find()) {
+            return midParamMatcher.group(1);
         }
-        String clean = url.split("\\?")[0];
-        if (clean.endsWith("/")) {
-            clean = clean.substring(0, clean.length() - 1);
+        Matcher spacePathMatcher = Pattern.compile("(?:space\\.bilibili\\.com/|/space/)(\\d+)").matcher(trimmed);
+        if (spacePathMatcher.find()) {
+            return spacePathMatcher.group(1);
         }
-        if (clean.contains(baseUrl) || clean.contains("/space/")) {
-            String[] temp = clean.split(Pattern.quote("/"));
-            return temp[temp.length - 1];
-        } else {
-            throw new ParsingException("Not a bilibili channel link: " + url);
+        if (trimmed.matches("^\\d+$")) {
+            return trimmed;
         }
+        throw new ParsingException("Not a bilibili channel link: " + url);
     }
 
     @Override

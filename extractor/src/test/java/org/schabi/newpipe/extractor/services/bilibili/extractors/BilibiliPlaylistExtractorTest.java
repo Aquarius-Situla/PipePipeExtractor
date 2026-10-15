@@ -27,6 +27,17 @@ class BilibiliPlaylistExtractorTest {
         NewPipe.init(new Downloader() {
             @Override
             public Response execute(@Nonnull Request request) {
+                if (request.url().contains("finger/spi")) {
+                    return new Response(200, "OK",
+                            Collections.singletonMap("date", Collections.singletonList("Thu, 15 Oct 2026 12:00:00 GMT")),
+                            "{\"code\":0,\"data\":{\"b_3\":\"buvid3_test\",\"b_4\":\"buvid4_test\"}}",
+                            new byte[0], request.url());
+                }
+                if (request.url().contains("GenWebTicket")) {
+                    return new Response(200, "OK", Collections.emptyMap(),
+                            "{\"code\":0,\"data\":{\"ticket\":\"ticket_test\",\"created_at\":1700000000,\"ttl\":100000000}}",
+                            new byte[0], request.url());
+                }
                 return new Response(200, "OK", Collections.emptyMap(), "{\"code\":0,\"data\":{}}", new byte[0], request.url());
             }
 
@@ -135,5 +146,46 @@ class BilibiliPlaylistExtractorTest {
 
         assertEquals("无封面合集", extractor.getName());
         assertEquals("https://i0.hdslb.com/bfs/archive/v1.jpg", extractor.getThumbnailUrl());
+    }
+
+    @Test
+    void onFetchPageHandlesCustomProtocolUriWithoutCrashing() {
+        BilibiliPlaylistLinkHandlerFactory factory = new BilibiliPlaylistLinkHandlerFactory();
+        assertDoesNotThrow(() -> {
+            ListLinkHandler handler = factory.fromUrl("bilibili:season:11545648:649231");
+            BilibiliPlaylistExtractor extractor = new BilibiliPlaylistExtractor(ServiceList.BiliBili, handler);
+            extractor.onFetchPage(NewPipe.getDownloader());
+        });
+    }
+
+    @Test
+    void handlesUnwrappedPlaylistInfoItemObject() throws ParsingException, JsonParserException {
+        JsonObject flatJson = JsonParser.object().from("""
+                {
+                  "season_id": 649231,
+                  "mid": 11545648,
+                  "title": "扁平合集标题",
+                  "cover": "http://i0.hdslb.com/bfs/archive/flat_cover.jpg",
+                  "total": 10
+                }
+                """);
+        BilibiliPlaylistInfoItemExtractor extractor =
+                new BilibiliPlaylistInfoItemExtractor(flatJson, "seasons_archives");
+        assertEquals("扁平合集标题", extractor.getName());
+        assertEquals("https://www.bilibili.com/medialist/play/11545648?business=space_collection&business_id=649231", extractor.getUrl());
+        assertEquals("https://i0.hdslb.com/bfs/archive/flat_cover.jpg", extractor.getThumbnailUrl());
+        assertEquals(10, extractor.getStreamCount());
+    }
+
+    @Test
+    void userInfoSafeFallbackOnNetworkFailure() throws ParsingException {
+        BilibiliPlaylistLinkHandlerFactory factory = new BilibiliPlaylistLinkHandlerFactory();
+        ListLinkHandler handler = factory.fromUrl("season:11545648:649231");
+        BilibiliPlaylistExtractor extractor = new BilibiliPlaylistExtractor(ServiceList.BiliBili, handler);
+        extractor.type = "seasons_archives";
+        extractor.data = new JsonObject();
+
+        assertEquals("[Unknown]", extractor.getUploaderName());
+        assertEquals("", extractor.getUploaderAvatarUrl());
     }
 }

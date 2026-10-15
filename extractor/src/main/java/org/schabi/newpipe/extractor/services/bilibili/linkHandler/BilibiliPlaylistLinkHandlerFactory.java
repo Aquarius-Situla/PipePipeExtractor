@@ -199,6 +199,9 @@ public class BilibiliPlaylistLinkHandlerFactory extends ListLinkHandlerFactory {
         if (id.startsWith("http://") || id.startsWith("https://")) {
             return id;
         }
+        if (id.startsWith("bilibili:")) {
+            id = id.substring("bilibili:".length());
+        }
         if (id.startsWith("season:")) {
             String[] parts = id.split(":");
             if (parts.length >= 3) {
