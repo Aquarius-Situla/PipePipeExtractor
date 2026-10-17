@@ -103,6 +103,9 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
         if (type == null) {
             return uploaderId;
         }
+        if (itemObject == null) {
+            return null;
+        }
         final long mid = itemObject.getLong("mid", -1);
         return mid > 0 ? String.valueOf(mid) : null;
     }
@@ -113,6 +116,9 @@ public class BilibiliPlaylistInfoItemExtractor implements PlaylistInfoItemExtrac
         if (type == null) {
             return uploaderId == null ? null
                     : BilibiliChannelLinkHandlerFactory.baseUrl + uploaderId;
+        }
+        if (itemObject == null) {
+            return null;
         }
         final long mid = itemObject.getLong("mid", -1);
         return mid > 0 ? BilibiliChannelLinkHandlerFactory.baseUrl + mid : null;
