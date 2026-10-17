@@ -175,7 +175,8 @@ public final class NewPipe {
         if ("mweb".equals(youtubePlayerClient)
                 || "android_vr".equals(youtubePlayerClient)
                 || "visionos".equals(youtubePlayerClient)
-                || "tv_downgraded".equals(youtubePlayerClient)) {
+                || "tv_downgraded".equals(youtubePlayerClient)
+                || "tv_samsung".equals(youtubePlayerClient)) {
             NewPipe.youtubePlayerClient = youtubePlayerClient;
         } else {
             NewPipe.youtubePlayerClient = "mweb";
